@@ -151,4 +151,4 @@ client.on('message', async message => {
 });
 
 // last line of the file
-client.login('ODY5OTAzMDA3OTUxNzU3MzYy.YQE-Tw.cfSrygHQBYfPMUizx-71HhK_j3o');
+client.login('token');
