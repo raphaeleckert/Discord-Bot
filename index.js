@@ -1,10 +1,11 @@
-const Discord = require('discord.js');
+const { Client, Intents, GatewayIntentBits } = require('discord.js');
+const { createAudioPlayer, createAudioResource, joinVoiceChannel } = require('@discordjs/voice');
 const ytdl = require('ytdl-core');
 const ytSearch = require('yt-search');
 const { getInfo, validateURL } = require('ytdl-core');
 const os = require('os');
 
-const client = new Discord.Client();
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 // checks string for url pattern
 const validURL = (str) =>{
@@ -28,16 +29,29 @@ const timestamp = (url) => {
 // handling the music queue
 const loopHandler = (message, connection, voiceChannel) => {
     if (queue.length === 0) {
-        voiceChannel.leave();
+        connection.disconnect();
     } else {
         var currentSong = queue[0];
         message.channel.send(`Now Playing:   ${currentSong.title}`);
+        stream = ytdl(currentSong.url, { quality: 'highestaudio', filter: 'audioonly'})
         connection
         .play(ytdl(currentSong.url, { quality: 'highestaudio', filter: 'audioonly'})) // , begin: currentSong.start 
         .on("finish", () => {
             queue.shift();
             loopHandler(message, connection, voiceChannel);
         });
+    }
+}
+
+// plays first song in Queue
+const playSong = (player, channel) => {
+    if (queue.length === 0) {
+        connection.disconnect();
+    } else {
+        const stream = ytdl(queue[0].url, { quality: 'highestaudio', filter: 'audioonly'})
+        const resource = createAudioResource(stream);
+        channel.send(`Now Playing:   ${currentSong.title}`);
+        player.play(resource);
     }
 }
 
@@ -59,6 +73,7 @@ client.once('ready', () => {
 
 var queue = []; // song queue
 var connection; // joined voice channel
+const subscriptions = new Map<import('discord.js').Snowflake
 
 client.on('message', async message => {
 
@@ -99,8 +114,18 @@ client.on('message', async message => {
             // if nothing currently playing
             if (queue.length === 1) {
                 const voiceChannel = message.member.voice.channel;
-                connection = await voiceChannel.join();
-                loopHandler(message, connection, voiceChannel);
+                connection = joinVoiceChannel({
+                    channelId: voiceChannel.id,
+                    guildId: voiceChannel.guild.id,
+                    adapterCreator: voiceChannel.guild.voiceAdapterCreator
+                })
+                const player = createAudioPlayer();
+                connection.subscribe(player);
+                playSong(player, message.channel)
+                player.on(AudioPlayerStatus.Idle, () => {
+                    queue.shift();
+                    playSong(player, message.channel);
+                });
             }
         
         //stop    
@@ -151,4 +176,4 @@ client.on('message', async message => {
 });
 
 // last line of the file
-client.login('ODY5OTAzMDA3OTUxNzU3MzYy.YQE-Tw.cfSrygHQBYfPMUizx-71HhK_j3o');
+client.login('ODY5OTAzMDA3OTUxNzU3MzYy.GAT3YB.BbrFHSAH_0WqR0Q7wdo3bRvo2sI_kHTozO94s4');
