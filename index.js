@@ -1,11 +1,15 @@
 const { Client, Intents, GatewayIntentBits } = require('discord.js');
-const { createAudioPlayer, createAudioResource, joinVoiceChannel } = require('@discordjs/voice');
+const { createAudioPlayer, createAudioResource, joinVoiceChannel, AudioPlayerStatus } = require('@discordjs/voice');
 const ytdl = require('ytdl-core');
 const ytSearch = require('yt-search');
 const { getInfo, validateURL } = require('ytdl-core');
 const os = require('os');
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [ 
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,] });
 
 // checks string for url pattern
 const validURL = (str) =>{
@@ -48,7 +52,8 @@ const playSong = (player, channel) => {
     if (queue.length === 0) {
         connection.disconnect();
     } else {
-        const stream = ytdl(queue[0].url, { quality: 'highestaudio', filter: 'audioonly'})
+        const currentSong = queue[0];
+        const stream = ytdl(currentSong.url, { quality: 'highestaudio', filter: 'audioonly'})
         const resource = createAudioResource(stream);
         channel.send(`Now Playing:   ${currentSong.title}`);
         player.play(resource);
@@ -73,9 +78,8 @@ client.once('ready', () => {
 
 var queue = []; // song queue
 var connection; // joined voice channel
-const subscriptions = new Map<import('discord.js').Snowflake
 
-client.on('message', async message => {
+client.on('messageCreate', async message => {
 
     try {
         //command processing
@@ -86,6 +90,8 @@ client.on('message', async message => {
 
         //add to queue        
         if (command === 'q') {
+            console.log(message.member)
+            console.log(message.member.voice)
             if (!message.member.voice.channel) return message.channel.send('Join a voice channel to listen to music');
 
             // link
@@ -114,6 +120,7 @@ client.on('message', async message => {
             // if nothing currently playing
             if (queue.length === 1) {
                 const voiceChannel = message.member.voice.channel;
+                console.log("hi")
                 connection = joinVoiceChannel({
                     channelId: voiceChannel.id,
                     guildId: voiceChannel.guild.id,
@@ -176,4 +183,4 @@ client.on('message', async message => {
 });
 
 // last line of the file
-client.login('ODY5OTAzMDA3OTUxNzU3MzYy.GAT3YB.BbrFHSAH_0WqR0Q7wdo3bRvo2sI_kHTozO94s4');
+client.login('ODY5OTAzMDA3OTUxNzU3MzYy.GvqE-s.cRgZJg8IfJ6CO_P8XEE2hQADOuZZC1j2BYz5jY');
